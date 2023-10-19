@@ -1,6 +1,5 @@
 {
   "app": "npx ts-node --prefer-ts-exts bin/s3-to-dynamo-pipe-integration.ts",
-  "profile": "developer_dev_tst-012172807735",
   "watch": {
     "include": ["**"],
     "exclude": [
