@@ -1,4 +1,11 @@
 import { Duration, Stack, StackProps } from "aws-cdk-lib";
+import {
+  Effect,
+  PolicyDocument,
+  PolicyStatement,
+  Role,
+  ServicePrincipal,
+} from "aws-cdk-lib/aws-iam";
 import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
 import { SqsDestination } from "aws-cdk-lib/aws-s3-notifications";
 import { Queue } from "aws-cdk-lib/aws-sqs";
@@ -18,5 +25,26 @@ export class S3ToDynamoPipeIntegrationStack extends Stack {
       EventType.OBJECT_CREATED,
       new SqsDestination(queue)
     );
+
+    const pipeSourcePolicy = new PolicyDocument({
+      statements: [
+        new PolicyStatement({
+          resources: [queue.queueArn],
+          actions: [
+            "sqs:GetQueueAttributes",
+            "sqs:ReceiveMessage",
+            "sqs:DeleteMessage",
+          ],
+          effect: Effect.ALLOW,
+        }),
+      ],
+    });
+
+    const pipeRole = new Role(this, "S3ToDynamoPipeIamRole", {
+      assumedBy: new ServicePrincipal("pipes.amazonaws.com"),
+      inlinePolicies: {
+        pipeSourcePolicy,
+      },
+    });
   }
 }
