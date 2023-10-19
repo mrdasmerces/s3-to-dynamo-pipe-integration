@@ -1,19 +1,22 @@
-import { Duration, Stack, StackProps } from 'aws-cdk-lib';
-import * as sns from 'aws-cdk-lib/aws-sns';
-import * as subs from 'aws-cdk-lib/aws-sns-subscriptions';
-import * as sqs from 'aws-cdk-lib/aws-sqs';
-import { Construct } from 'constructs';
+import { Duration, Stack, StackProps } from "aws-cdk-lib";
+import { Bucket, EventType } from "aws-cdk-lib/aws-s3";
+import { SqsDestination } from "aws-cdk-lib/aws-s3-notifications";
+import { Queue } from "aws-cdk-lib/aws-sqs";
+import { Construct } from "constructs";
 
 export class S3ToDynamoPipeIntegrationStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const queue = new sqs.Queue(this, 'S3ToDynamoPipeIntegrationQueue', {
-      visibilityTimeout: Duration.seconds(300)
+    const queue = new Queue(this, "S3ToDynamoPipeSourceQueue", {
+      receiveMessageWaitTime: Duration.seconds(20),
     });
 
-    const topic = new sns.Topic(this, 'S3ToDynamoPipeIntegrationTopic');
+    const ingestionBucket = new Bucket(this, "S3ToDynamoPipeIngestionBucket");
 
-    topic.addSubscription(new subs.SqsSubscription(queue));
+    ingestionBucket.addEventNotification(
+      EventType.OBJECT_CREATED,
+      new SqsDestination(queue)
+    );
   }
 }
